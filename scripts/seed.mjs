@@ -47,12 +47,15 @@ const svg = (title, colorA, colorB) =>
        </linearGradient></defs>
        <rect width="900" height="900" fill="url(#g)"/>
        <circle cx="450" cy="420" r="180" fill="${colorA}" opacity="0.45"/>
-       <text x="450" y="690" font-family="Georgia, serif" font-size="44" fill="#fff" text-anchor="middle">${title}</text>
+       <text x="450" y="690" font-family="Georgia, serif" font-size="44" fill="#fff" text-anchor="middle">${escapeXml(title)}</text>
      </svg>`
   );
 
 const slugify = (s) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const escapeXml = (s) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const categories = [
   { name: "Gift Sets", colorA: "#e11d48", colorB: "#9f1239" },
@@ -111,7 +114,8 @@ async function main() {
 
   const categoryRefs = {};
   for (const c of categories) {
-    const doc = await client.create({
+    const doc = await client.createOrReplace({
+      _id: `category-${slugify(c.name)}`,
       _type: "category",
       name: c.name,
       slug: { _type: "slug", current: slugify(c.name) },
@@ -125,7 +129,8 @@ async function main() {
 
   for (const [name, catName, price, compareAtPrice, featured, gift] of products) {
     const cat = categories.find((c) => c.name === catName);
-    await client.create({
+    await client.createOrReplace({
+      _id: `product-${slugify(name)}`,
       _type: "product",
       name,
       slug: { _type: "slug", current: slugify(name) },
